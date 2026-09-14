@@ -1,0 +1,2091 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Distractown — Multitasking Driving Challenge</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,sans-serif;
+  background:#101827;
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  min-height:100vh
+}
+
+.wrap{
+  width:min(1100px,100%);
+  padding:16px
+}
+
+.top{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap
+}
+
+.title{
+  font-size:clamp(24px,4vw,38px);
+  font-weight:800
+}
+
+.sub{
+  opacity:.8
+}
+
+.hud{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap
+}
+
+.pill{
+  background:#1d2a40;
+  border:1px solid #34435d;
+  padding:8px 12px;
+  border-radius:999px;
+  font-weight:700
+}
+
+.game{
+  position:relative;
+  margin-top:12px;
+  background:#1b2638;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 15px 50px #0006
+}
+
+.canvas{
+  display:block;
+  width:100%;
+  height:auto;
+  background:#5b8f43
+}
+
+.overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:#06101acc;
+  z-index:20
+}
+
+.card{
+  max-width:680px;
+  background:#162238;
+  border:1px solid #42526d;
+  border-radius:18px;
+  padding:26px;
+  text-align:center;
+  box-shadow:0 15px 50px #0008
+}
+
+.card h1{
+  margin:0 0 8px
+}
+
+.card p{
+  line-height:1.5;
+  color:#d9e2f2
+}
+
+.btn{
+  border:0;
+  border-radius:12px;
+  padding:12px 18px;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+  background:#4f8cff;
+  color:#fff
+}
+
+.btn:hover{
+  filter:brightness(1.1)
+}
+
+.hidden{
+  display:none
+}
+
+/* LEVEL DISPLAY */
+
+.levelBox{
+  position:absolute;
+  left:16px;
+  top:16px;
+  background:#162238e8;
+  border:1px solid #51627d;
+  border-radius:12px;
+  padding:10px 14px;
+  z-index:5;
+  min-width:190px
+}
+
+.levelTitle{
+  font-size:14px;
+  opacity:.75
+}
+
+.levelName{
+  font-weight:800;
+  font-size:18px
+}
+
+.progress{
+  height:6px;
+  background:#33435f;
+  border-radius:20px;
+  overflow:hidden;
+  margin-top:7px
+}
+
+.progressBar{
+  height:100%;
+  width:0%;
+  background:#4f8cff;
+  transition:width .2s
+}
+
+/* TASK BOX */
+
+.task{
+  position:absolute;
+  right:16px;
+  top:16px;
+  width:min(350px,42%);
+  background:#fff;
+  color:#172238;
+  border-radius:16px;
+  padding:15px;
+  box-shadow:0 10px 35px #0008;
+  z-index:10;
+  display:none
+}
+
+.task.show{
+  display:block
+}
+
+.taskType{
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  opacity:.65;
+  margin-bottom:4px
+}
+
+.task h3{
+  margin:0 0 10px;
+  font-size:17px
+}
+
+.answers{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px
+}
+
+.answers button{
+  padding:10px;
+  border:2px solid #d4dbea;
+  background:#f7f9fc;
+  color:#172238;
+  border-radius:10px;
+  text-align:center;
+  font-weight:700;
+  cursor:pointer
+}
+
+.answers button:hover{
+  background:#e9effa
+}
+
+.taskTimer{
+  margin-top:9px;
+  height:6px;
+  background:#d9dfeb;
+  border-radius:20px;
+  overflow:hidden
+}
+
+.taskTimerBar{
+  height:100%;
+  width:100%;
+  background:#4f8cff
+}
+
+.feedback{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-size:34px;
+  font-weight:900;
+  pointer-events:none;
+  z-index:15;
+  opacity:0
+}
+
+.feedback.show{
+  animation:feedback .65s ease
+}
+
+@keyframes feedback{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}
+  25%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1)}
+}
+
+/* REACTION */
+
+.reaction{
+  position:absolute;
+  left:50%;
+  bottom:25px;
+  transform:translateX(-50%);
+  z-index:12;
+  display:none;
+  text-align:center
+}
+
+.reaction button{
+  width:150px;
+  height:80px;
+  border:0;
+  border-radius:18px;
+  font-size:22px;
+  font-weight:900;
+  cursor:pointer;
+  background:#ffd34d;
+  color:#172238;
+  box-shadow:0 8px 25px #0007
+}
+
+.reactionText{
+  background:#162238e8;
+  padding:7px 12px;
+  border-radius:10px;
+  margin-bottom:8px;
+  font-weight:700
+}
+
+/* RESULTS */
+
+.results{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+  margin:16px 0
+}
+
+.stat{
+  background:#202f47;
+  border-radius:12px;
+  padding:12px
+}
+
+.stat b{
+  display:block;
+  font-size:24px
+}
+
+.small{
+  font-size:13px;
+  opacity:.75
+}
+
+.note{
+  margin-top:10px;
+  font-size:13px;
+  color:#b9c5d8
+}
+
+.warn{
+  color:#ffd27a;
+  font-weight:700
+}
+
+.controls{
+  margin-top:12px;
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap
+}
+
+.touch button{
+  width:58px;
+  height:48px;
+  border:0;
+  border-radius:12px;
+  background:#263754;
+  color:#fff;
+  font-size:22px;
+  font-weight:800
+}
+
+.instructions{
+  text-align:left;
+  background:#202f47;
+  padding:14px;
+  border-radius:12px;
+  margin:15px 0
+}
+
+.instructions li{
+  margin:7px 0
+}
+
+@media(max-width:700px){
+  .task{
+    width:calc(100% - 32px);
+    right:16px;
+    top:80px
+  }
+
+  .levelBox{
+    top:16px;
+    left:16px
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<div class="top">
+
+  <div>
+    <div class="title">🚗 Distractown</div>
+    <div class="sub">Progressive Multitasking Driving Challenge</div>
+  </div>
+
+  <div class="hud">
+    <div class="pill">Score: <span id="score">0</span></div>
+    <div class="pill">Time: <span id="time">0</span>s</div>
+    <div class="pill">Damage: <span id="damage">0</span>%</div>
+  </div>
+
+</div>
+
+
+<div class="game">
+
+<canvas id="game" class="canvas" width="1000" height="620"></canvas>
+
+
+<!-- LEVEL -->
+
+<div class="levelBox">
+
+  <div class="levelTitle">CURRENT LEVEL</div>
+
+  <div class="levelName" id="levelName">
+    Level 1 — Driving
+  </div>
+
+  <div class="progress">
+    <div class="progressBar" id="levelProgress"></div>
+  </div>
+
+</div>
+
+
+<!-- TASK -->
+
+<div id="task" class="task">
+
+  <div class="taskType" id="taskType">
+    DIStraction
+  </div>
+
+  <h3 id="taskText"></h3>
+
+  <div id="answers" class="answers"></div>
+
+  <div class="taskTimer">
+    <div id="taskTimerBar" class="taskTimerBar"></div>
+  </div>
+
+</div>
+
+
+<!-- REACTION -->
+
+<div id="reaction" class="reaction">
+
+  <div class="reactionText">
+    ⚠️ REACT NOW!
+  </div>
+
+  <button id="reactionButton">
+    PRESS!
+  </button>
+
+</div>
+
+
+<!-- FEEDBACK -->
+
+<div id="feedback" class="feedback"></div>
+
+
+<!-- START -->
+
+<div id="start" class="overlay">
+
+  <div class="card">
+
+    <h1>🚗 Ready to drive?</h1>
+
+    <p>
+      This challenge starts simple and progressively adds distractions.
+      You must keep controlling the car while completing other tasks.
+    </p>
+
+    <div class="instructions">
+
+      <b>How the challenge works:</b>
+
+      <ul>
+        <li>🟢 <b>Level 1:</b> Drive and avoid hazards.</li>
+        <li>🟡 <b>Level 2:</b> Drive while answering maths questions.</li>
+        <li>🟠 <b>Level 3:</b> Faster hazards and harder questions.</li>
+        <li>🔴 <b>Level 4:</b> Maths + reaction challenges.</li>
+        <li>⚠️ <b>Level 5:</b> Multiple distractions at once.</li>
+      </ul>
+
+    </div>
+
+    <p>
+      The game ends when your damage reaches <b>100%</b>.
+    </p>
+
+    <button class="btn" id="startBtn">
+      Start Challenge
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- END -->
+
+<div id="end" class="overlay hidden">
+
+  <div class="card">
+
+    <h1 id="endTitle">🏁 Challenge Complete</h1>
+
+    <p id="endMessage"></p>
+
+    <div class="results">
+
+      <div class="stat">
+        Final Score
+        <b id="rscore">0</b>
+      </div>
+
+      <div class="stat">
+        Highest Level
+        <b id="rlevel">1</b>
+      </div>
+
+      <div class="stat">
+        🧮 Maths Accuracy
+        <b id="rmath">—</b>
+      </div>
+
+      <div class="stat">
+        🚗 Dodging Accuracy
+        <b id="rdodge">—</b>
+      </div>
+
+      <div class="stat">
+        🛣️ Road Accuracy
+        <b id="rroad">—</b>
+      </div>
+
+      <div class="stat">
+        ⚡ Reaction Accuracy
+        <b id="rreaction">—</b>
+      </div>
+
+      <div class="stat">
+        🧠 Multitasking Accuracy
+        <b id="rmulti">—</b>
+      </div>
+
+      <div class="stat">
+        💥 Final Damage
+        <b id="rdamage">100%</b>
+      </div>
+
+    </div>
+
+    <p id="feedbackText"></p>
+
+    <button class="btn" id="againBtn">
+      Try Again
+    </button>
+
+  </div>
+
+</div>
+
+</div>
+
+
+<div class="controls touch">
+
+  <button data-k="left">◀</button>
+  <button data-k="up">▲</button>
+  <button data-k="right">▶</button>
+
+</div>
+
+<div class="note">
+  Educational prototype: the game demonstrates how increasing distractions
+  can affect performance and decision-making.
+</div>
+
+</div>
+
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const scoreEl = document.getElementById("score");
+const timeEl = document.getElementById("time");
+const damageEl = document.getElementById("damage");
+
+const levelNameEl = document.getElementById("levelName");
+const levelProgressEl = document.getElementById("levelProgress");
+
+const taskEl = document.getElementById("task");
+const taskTypeEl = document.getElementById("taskType");
+const taskTextEl = document.getElementById("taskText");
+const answersEl = document.getElementById("answers");
+const taskTimerBar = document.getElementById("taskTimerBar");
+
+const reactionEl = document.getElementById("reaction");
+const reactionButton = document.getElementById("reactionButton");
+
+const feedbackEl = document.getElementById("feedback");
+
+
+/* =========================
+   GAME STATE
+========================= */
+
+let running = false;
+let last = 0;
+
+let elapsed = 0;
+let score = 0;
+let damage = 0;
+
+let keys = {};
+
+let hazards = [];
+
+let spawnTimer = 0;
+
+let roadOffset = 0;
+
+let currentLevel = 1;
+let highestLevel = 1;
+
+let taskActive = false;
+let taskTime = 0;
+let taskMaxTime = 0;
+
+let reactionActive = false;
+let reactionTime = 0;
+
+
+/* =========================
+   STATISTICS
+========================= */
+
+let hazardsSpawned = 0;
+let hazardsHit = 0;
+let hazardsDodged = 0;
+
+let mathAsked = 0;
+let mathCorrect = 0;
+let mathMissed = 0;
+
+let reactionsAsked = 0;
+let reactionsCorrect = 0;
+let reactionsMissed = 0;
+
+let multitaskAttempts = 0;
+let multitaskSuccess = 0;
+
+let roadTime = 0;
+let roadSafeTime = 0;
+
+
+/* =========================
+   CAR
+========================= */
+
+let car = {
+  x:500,
+  y:510,
+  w:54,
+  h:92,
+  speed:290
+};
+
+
+/* =========================
+   QUESTIONS
+========================= */
+
+const easyMath = [
+
+  {
+    q:"What is 6 + 7?",
+    a:["11","12","13","14"],
+    c:2
+  },
+
+  {
+    q:"What is 9 × 3?",
+    a:["18","27","36","21"],
+    c:1
+  },
+
+  {
+    q:"What is 20 − 8?",
+    a:["10","11","12","14"],
+    c:2
+  },
+
+  {
+    q:"What is 30 ÷ 5?",
+    a:["5","6","7","8"],
+    c:1
+  }
+
+];
+
+
+const hardMath = [
+
+  {
+    q:"What is 17 + 28?",
+    a:["35","45","55","42"],
+    c:1
+  },
+
+  {
+    q:"What is 9 × 7?",
+    a:["54","63","72","56"],
+    c:1
+  },
+
+  {
+    q:"What is 84 ÷ 7?",
+    a:["10","11","12","14"],
+    c:2
+  },
+
+  {
+    q:"What is 15% of 100?",
+    a:["5","10","15","20"],
+    c:2
+  },
+
+  {
+    q:"What is 12 × 6 − 10?",
+    a:["52","62","72","82"],
+    c:1
+  }
+
+];
+
+
+/* =========================
+   RESET
+========================= */
+
+function reset(){
+
+  running = true;
+
+  elapsed = 0;
+  score = 0;
+  damage = 0;
+
+  hazards = [];
+
+  spawnTimer = .7;
+
+  roadOffset = 0;
+
+  currentLevel = 1;
+  highestLevel = 1;
+
+  taskActive = false;
+  reactionActive = false;
+
+  hazardsSpawned = 0;
+  hazardsHit = 0;
+  hazardsDodged = 0;
+
+  mathAsked = 0;
+  mathCorrect = 0;
+  mathMissed = 0;
+
+  reactionsAsked = 0;
+  reactionsCorrect = 0;
+  reactionsMissed = 0;
+
+  multitaskAttempts = 0;
+  multitaskSuccess = 0;
+
+  roadTime = 0;
+  roadSafeTime = 0;
+
+  car.x = 500;
+
+  document.getElementById("start").classList.add("hidden");
+  document.getElementById("end").classList.add("hidden");
+
+  taskEl.classList.remove("show");
+  reactionEl.style.display = "none";
+
+  updateHud();
+
+  last = performance.now();
+
+  requestAnimationFrame(loop);
+}
+
+
+/* =========================
+   LEVEL SYSTEM
+========================= */
+
+function getLevel(){
+
+  if(elapsed < 15)
+    return 1;
+
+  if(elapsed < 30)
+    return 2;
+
+  if(elapsed < 45)
+    return 3;
+
+  if(elapsed < 65)
+    return 4;
+
+  return 5;
+}
+
+
+function updateLevel(){
+
+  let newLevel = getLevel();
+
+  if(newLevel !== currentLevel){
+
+    currentLevel = newLevel;
+
+    if(currentLevel > highestLevel)
+      highestLevel = currentLevel;
+
+    showFeedback(
+      currentLevel === 2 ? "🧮 MULTITASKING BEGINS!" :
+      currentLevel === 3 ? "⚡ SPEED INCREASED!" :
+      currentLevel === 4 ? "🔥 MORE DISTRACTIONS!" :
+      "🚨 MAXIMUM DISTRACTION!",
+      "#ffd34d"
+    );
+  }
+
+
+  const names = {
+
+    1:"Level 1 — Driving",
+
+    2:"Level 2 — Driving + Maths",
+
+    3:"Level 3 — Faster + Harder",
+
+    4:"Level 4 — Maths + Reactions",
+
+    5:"Level 5 — Maximum Multitasking"
+
+  };
+
+
+  levelNameEl.textContent = names[currentLevel];
+
+
+  let start = (currentLevel - 1) * 15;
+
+  let duration = currentLevel === 5 ? 30 : 15;
+
+  let progress = Math.min(
+    100,
+    ((elapsed - start) / duration) * 100
+  );
+
+  if(currentLevel === 1)
+    progress = (elapsed / 15) * 100;
+
+
+  levelProgressEl.style.width =
+    Math.max(0,progress) + "%";
+}
+
+
+/* =========================
+   HUD
+========================= */
+
+function updateHud(){
+
+  scoreEl.textContent =
+    Math.max(0,Math.floor(score));
+
+  timeEl.textContent =
+    Math.floor(elapsed);
+
+  damageEl.textContent =
+    Math.min(100,Math.floor(damage));
+
+}
+
+
+/* =========================
+   ROAD
+========================= */
+
+function laneX(){
+
+  return [350,500,650];
+
+}
+
+
+/* =========================
+   HAZARDS
+========================= */
+
+function spawnHazard(){
+
+  let lanes = laneX();
+
+  let speedMultiplier =
+
+    currentLevel === 1 ? 1 :
+
+    currentLevel === 2 ? 1.15 :
+
+    currentLevel === 3 ? 1.35 :
+
+    currentLevel === 4 ? 1.55 :
+
+    1.8;
+
+
+  let hazard = {
+
+    x:lanes[
+      Math.floor(Math.random()*lanes.length)
+    ],
+
+    y:-90,
+
+    w:46,
+
+    h:70,
+
+    spd:
+      (150 + Math.random()*90)
+      * speedMultiplier,
+
+    type:
+      Math.random()<.65
+      ? "car"
+      : "cone"
+
+  };
+
+
+  hazards.push(hazard);
+
+  hazardsSpawned++;
+
+
+  spawnTimer =
+
+    currentLevel === 1
+    ? .9 + Math.random()*1.1
+
+    : currentLevel === 2
+    ? .75 + Math.random()*.9
+
+    : currentLevel === 3
+    ? .55 + Math.random()*.75
+
+    : currentLevel === 4
+    ? .45 + Math.random()*.65
+
+    : .35 + Math.random()*.55;
+
+}
+
+
+/* =========================
+   COLLISION
+========================= */
+
+function hit(a,b){
+
+  return (
+
+    a.x-a.w/2 < b.x+b.w/2 &&
+
+    a.x+a.w/2 > b.x-b.w/2 &&
+
+    a.y < b.y+b.h &&
+
+    a.y+a.h > b.y
+
+  );
+
+}
+
+
+/* =========================
+   DRAW
+========================= */
+
+function roundRect(x,y,w,h,r){
+
+  ctx.beginPath();
+
+  ctx.roundRect(x,y,w,h,r);
+
+  ctx.fill();
+
+}
+
+
+function draw(){
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  /* GRASS */
+
+  ctx.fillStyle = "#5f9649";
+
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  /* ROAD */
+
+  ctx.fillStyle = "#303844";
+
+  ctx.fillRect(
+    260,
+    0,
+    480,
+    canvas.height
+  );
+
+
+  ctx.fillStyle = "#202731";
+
+  ctx.fillRect(
+    280,
+    0,
+    440,
+    canvas.height
+  );
+
+
+  /* LANE MARKINGS */
+
+  ctx.strokeStyle = "#f7f1cf";
+
+  ctx.lineWidth = 6;
+
+  ctx.setLineDash([42,35]);
+
+  ctx.lineDashOffset = -roadOffset;
+
+
+  [420,580].forEach(x=>{
+
+    ctx.beginPath();
+
+    ctx.moveTo(x,0);
+
+    ctx.lineTo(x,canvas.height);
+
+    ctx.stroke();
+
+  });
+
+
+  ctx.setLineDash([]);
+
+
+  /* ROAD EDGES */
+
+  ctx.fillStyle = "#f2f2e6";
+
+  ctx.fillRect(
+    260,
+    0,
+    8,
+    canvas.height
+  );
+
+  ctx.fillRect(
+    732,
+    0,
+    8,
+    canvas.height
+  );
+
+
+  /* ROADSIDE OBJECTS */
+
+  for(
+    let y=-80+(roadOffset%120);
+    y<canvas.height;
+    y+=120
+  ){
+
+    ctx.fillStyle="#b4d6e9";
+
+    ctx.fillRect(
+      205,
+      y,
+      35,
+      22
+    );
+
+    ctx.fillStyle="#8c6b4f";
+
+    ctx.fillRect(
+      220,
+      y+22,
+      7,
+      45
+    );
+
+    ctx.fillStyle="#e9cf63";
+
+    ctx.beginPath();
+
+    ctx.arc(
+      790,
+      y+18,
+      16,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.fillStyle="#39723d";
+
+    ctx.fillRect(
+      784,
+      y+20,
+      12,
+      50
+    );
+
+  }
+
+
+  /* HAZARDS */
+
+  hazards.forEach(h=>{
+
+    if(h.type==="car"){
+
+      ctx.fillStyle="#d34b4b";
+
+      roundRect(
+        h.x-h.w/2,
+        h.y,
+        h.w,
+        h.h,
+        8
+      );
+
+
+      ctx.fillStyle="#b9d8e8";
+
+      ctx.fillRect(
+        h.x-17,
+        h.y+12,
+        34,
+        18
+      );
+
+
+      ctx.fillStyle="#151b24";
+
+      ctx.fillRect(
+        h.x-23,
+        h.y+57,
+        10,
+        8
+      );
+
+      ctx.fillRect(
+        h.x+13,
+        h.y+57,
+        10,
+        8
+      );
+
+    }
+
+    else{
+
+      ctx.fillStyle="#f2a33b";
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        h.x,
+        h.y
+      );
+
+      ctx.lineTo(
+        h.x-24,
+        h.y+62
+      );
+
+      ctx.lineTo(
+        h.x+24,
+        h.y+62
+      );
+
+      ctx.closePath();
+
+      ctx.fill();
+
+
+      ctx.fillStyle="#fff";
+
+      ctx.fillRect(
+        h.x-13,
+        h.y+30,
+        26,
+        8
+      );
+
+    }
+
+  });
+
+
+  /* PLAYER CAR */
+
+  ctx.fillStyle="#4285f4";
+
+  roundRect(
+    car.x-car.w/2,
+    car.y,
+    car.w,
+    car.h,
+    10
+  );
+
+
+  ctx.fillStyle="#bfe3f1";
+
+  ctx.fillRect(
+    car.x-19,
+    car.y+12,
+    38,
+    27
+  );
+
+
+  ctx.fillStyle="#16202d";
+
+  ctx.fillRect(
+    car.x-26,
+    car.y+68,
+    12,
+    9
+  );
+
+  ctx.fillRect(
+    car.x+14,
+    car.y+68,
+    12,
+    9
+  );
+
+
+  ctx.fillStyle="#ffdf62";
+
+  ctx.fillRect(
+    car.x-20,
+    car.y+4,
+    11,
+    7
+  );
+
+  ctx.fillRect(
+    car.x+9,
+    car.y+4,
+    11,
+    7
+  );
+
+}
+
+
+/* =========================
+   TASK SYSTEM
+========================= */
+
+function getQuestion(){
+
+  let pool =
+    currentLevel <= 2
+    ? easyMath
+    : hardMath;
+
+
+  return pool[
+    Math.floor(Math.random()*pool.length)
+  ];
+
+}
+
+
+function showMath(){
+
+  if(taskActive)
+    return;
+
+
+  taskActive = true;
+
+  mathAsked++;
+
+  multitaskAttempts++;
+
+
+  let q = getQuestion();
+
+  taskTypeEl.textContent =
+    "🧮 MATH — KEEP DRIVING";
+
+  taskTextEl.textContent =
+    q.q;
+
+  answersEl.innerHTML = "";
+
+
+  q.a.forEach((answer,index)=>{
+
+    let button =
+      document.createElement("button");
+
+    button.textContent = answer;
+
+
+    button.onclick = ()=>{
+
+      if(!taskActive)
+        return;
+
+
+      if(index === q.c){
+
+        mathCorrect++;
+
+        multitaskSuccess++;
+
+        score += 80;
+
+        showFeedback(
+          "✓ CORRECT",
+          "#61e294"
+        );
+
+      }
+      else{
+
+        damage +=
+          currentLevel >= 4 ? 7 : 5;
+
+        score -= 25;
+
+        showFeedback(
+          "✕ WRONG",
+          "#ff7373"
+        );
+
+      }
+
+
+      hideTask();
+
+      updateHud();
+
+    };
+
+
+    answersEl.appendChild(button);
+
+  });
+
+
+  taskMaxTime =
+    currentLevel === 2 ? 5 :
+    currentLevel === 3 ? 4 :
+    currentLevel === 4 ? 3.5 :
+    3;
+
+
+  taskTime = taskMaxTime;
+
+  taskEl.classList.add("show");
+
+}
+
+
+/* =========================
+   HIDE TASK
+========================= */
+
+function hideTask(){
+
+  taskActive = false;
+
+  taskEl.classList.remove("show");
+
+}
+
+
+/* =========================
+   REACTION TASK
+========================= */
+
+function showReaction(){
+
+  if(reactionActive)
+    return;
+
+
+  reactionActive = true;
+
+  reactionsAsked++;
+
+  multitaskAttempts++;
+
+  reactionTime =
+    currentLevel === 4
+    ? 2.5
+    : 1.7;
+
+
+  reactionEl.style.display =
+    "block";
+
+}
+
+
+reactionButton.onclick = ()=>{
+
+  if(!reactionActive)
+    return;
+
+
+  reactionActive = false;
+
+  reactionEl.style.display =
+    "none";
+
+
+  reactionsCorrect++;
+
+  multitaskSuccess++;
+
+  score += 100;
+
+
+  showFeedback(
+    "⚡ GREAT REACTION!",
+    "#61e294"
+  );
+
+};
+
+
+/* =========================
+   FEEDBACK
+========================= */
+
+function showFeedback(text){
+
+  feedbackEl.textContent = text;
+
+  feedbackEl.classList.remove("show");
+
+  void feedbackEl.offsetWidth;
+
+  feedbackEl.classList.add("show");
+
+}
+
+
+/* =========================
+   TASK SPAWNING
+========================= */
+
+let taskSpawnTimer = 4;
+
+
+function updateTasks(dt){
+
+  /* LEVEL 1 = NO DISTRACTIONS */
+
+  if(currentLevel === 1)
+    return;
+
+
+  taskSpawnTimer -= dt;
+
+
+  let interval =
+
+    currentLevel === 2
+    ? 7
+
+    : currentLevel === 3
+    ? 5
+
+    : currentLevel === 4
+    ? 4
+
+    : 3;
+
+
+  if(
+    taskSpawnTimer <= 0 &&
+    !taskActive
+  ){
+
+    showMath();
+
+    taskSpawnTimer =
+      interval +
+      Math.random()*2;
+
+  }
+
+
+  /* MATH TIMER */
+
+  if(taskActive){
+
+    taskTime -= dt;
+
+    taskTimerBar.style.width =
+      Math.max(
+        0,
+        taskTime/taskMaxTime*100
+      ) + "%";
+
+
+    if(taskTime <= 0){
+
+      mathMissed++;
+
+      damage +=
+        currentLevel >= 4 ? 8 : 5;
+
+      hideTask();
+
+      showFeedback(
+        "⏱ MISSED!",
+        "#ff7373"
+      );
+
+    }
+
+  }
+
+
+  /* REACTION TASK */
+
+  if(
+    currentLevel >= 4 &&
+    !reactionActive &&
+    Math.random() < dt *
+      (currentLevel === 4 ? .045 : .075)
+  ){
+
+    showReaction();
+
+  }
+
+
+  if(reactionActive){
+
+    reactionTime -= dt;
+
+
+    if(reactionTime <= 0){
+
+      reactionActive = false;
+
+      reactionEl.style.display =
+        "none";
+
+      reactionsMissed++;
+
+      damage += 9;
+
+      showFeedback(
+        "⚡ TOO SLOW!",
+        "#ff7373"
+      );
+
+    }
+
+  }
+
+}
+
+
+/* =========================
+   MAIN LOOP
+========================= */
+
+function loop(t){
+
+  if(!running)
+    return;
+
+
+  let dt =
+    Math.min(
+      .035,
+      (t-last)/1000
+    );
+
+
+  last = t;
+
+
+  elapsed += dt;
+
+
+  updateLevel();
+
+
+  /* ROAD MOVEMENT */
+
+  roadOffset +=
+    car.speed * dt;
+
+
+  /* STEERING */
+
+  let steer =
+
+    (keys.ArrowLeft ||
+     keys.a ||
+     keys.left ? -1 : 0)
+
+    +
+
+    (keys.ArrowRight ||
+     keys.d ||
+     keys.right ? 1 : 0);
+
+
+  car.x +=
+    steer * 360 * dt;
+
+
+  car.x =
+    Math.max(
+      295,
+      Math.min(
+        705,
+        car.x
+      )
+    );
+
+
+  /* ROAD ACCURACY */
+
+  roadTime += dt;
+
+
+  if(
+    car.x >= 315 &&
+    car.x <= 685
+  ){
+
+    roadSafeTime += dt;
+
+  }
+
+
+  /* OFF-ROAD DAMAGE */
+
+  if(
+    car.x < 300 ||
+    car.x > 700
+  ){
+
+    damage +=
+      18 * dt;
+
+  }
+
+
+  /* SPAWN HAZARDS */
+
+  spawnTimer -= dt;
+
+
+  if(spawnTimer <= 0){
+
+    spawnHazard();
+
+  }
+
+
+  /* MOVE HAZARDS */
+
+  hazards.forEach(h=>{
+
+    h.y +=
+      (h.spd +
+       car.speed*.18)
+      * dt;
+
+  });
+
+
+  /* COLLISIONS */
+
+  for(
+    let i=hazards.length-1;
+    i>=0;
+    i--
+  ){
+
+    let h = hazards[i];
+
+
+    if(hit(car,h)){
+
+      hazardsHit++;
+
+      damage +=
+        currentLevel >= 4
+        ? 10
+        : 7;
+
+      score -= 60;
+
+      hazards.splice(i,1);
+
+      showFeedback(
+        "💥 COLLISION!",
+        "#ff7373"
+      );
+
+    }
+
+    else if(
+      h.y >
+      canvas.height+100
+    ){
+
+      hazardsDodged++;
+
+      score +=
+        currentLevel >= 3
+        ? 18
+        : 12;
+
+      hazards.splice(i,1);
+
+    }
+
+  }
+
+
+  /* DISTRACTIONS */
+
+  updateTasks(dt);
+
+
+  /* DAMAGE LIMIT */
+
+  damage =
+    Math.min(
+      100,
+      damage
+    );
+
+
+  updateHud();
+
+  draw();
+
+
+  if(damage >= 100){
+
+    endGame();
+
+    return;
+
+  }
+
+
+  requestAnimationFrame(loop);
+
+}
+
+
+/* =========================
+   END GAME
+========================= */
+
+function endGame(){
+
+  running = false;
+
+  hideTask();
+
+  reactionEl.style.display =
+    "none";
+
+
+  let mathAccuracy =
+    mathAsked > 0
+    ? Math.round(
+        mathCorrect /
+        mathAsked *
+        100
+      )
+    : null;
+
+
+  let dodgeAccuracy =
+    hazardsSpawned > 0
+    ? Math.round(
+        hazardsDodged /
+        hazardsSpawned *
+        100
+      )
+    : null;
+
+
+  let roadAccuracy =
+    roadTime > 0
+    ? Math.round(
+        roadSafeTime /
+        roadTime *
+        100
+      )
+    : 100;
+
+
+  let reactionAccuracy =
+    reactionsAsked > 0
+    ? Math.round(
+        reactionsCorrect /
+        reactionsAsked *
+        100
+      )
+    : null;
+
+
+  let multitaskAccuracy =
+    multitaskAttempts > 0
+    ? Math.round(
+        multitaskSuccess /
+        multitaskAttempts *
+        100
+      )
+    : null;
+
+
+  document.getElementById("rscore")
+    .textContent =
+    Math.max(
+      0,
+      Math.floor(score)
+    );
+
+
+  document.getElementById("rlevel")
+    .textContent =
+    highestLevel;
+
+
+  document.getElementById("rmath")
+    .textContent =
+    mathAccuracy === null
+    ? "N/A"
+    : mathAccuracy+"%";
+
+
+  document.getElementById("rdodge")
+    .textContent =
+    dodgeAccuracy === null
+    ? "N/A"
+    : dodgeAccuracy+"%";
+
+
+  document.getElementById("rroad")
+    .textContent =
+    roadAccuracy+"%";
+
+
+  document.getElementById("rreaction")
+    .textContent =
+    reactionAccuracy === null
+    ? "N/A"
+    : reactionAccuracy+"%";
+
+
+  document.getElementById("rmulti")
+    .textContent =
+    multitaskAccuracy === null
+    ? "N/A"
+    : multitaskAccuracy+"%";
+
+
+  document.getElementById("rdamage")
+    .textContent =
+    Math.floor(damage)+"%";
+
+
+  let overall = [];
+
+
+  if(mathAccuracy !== null)
+    overall.push(mathAccuracy);
+
+  if(dodgeAccuracy !== null)
+    overall.push(dodgeAccuracy);
+
+  overall.push(roadAccuracy);
+
+  if(reactionAccuracy !== null)
+    overall.push(reactionAccuracy);
+
+
+  let overallAccuracy =
+    Math.round(
+      overall.reduce(
+        (a,b)=>a+b,
+        0
+      ) / overall.length
+    );
+
+
+  document.getElementById("endTitle")
+    .textContent =
+    damage >= 100
+    ? "💥 Vehicle Damaged — Challenge Over"
+    : "🏁 Challenge Complete";
+
+
+  document.getElementById("endMessage")
+    .textContent =
+    "Overall performance accuracy: "
+    + overallAccuracy
+    + "%. You reached Level "
+    + highestLevel
+    + ".";
+
+
+  let feedback;
+
+
+  if(overallAccuracy >= 85){
+
+    feedback =
+      "Excellent multitasking performance. You maintained strong control while dealing with increasing distractions.";
+
+  }
+  else if(overallAccuracy >= 65){
+
+    feedback =
+      "Good performance. As distractions increased, some areas of your performance became less accurate.";
+
+  }
+  else if(overallAccuracy >= 45){
+
+    feedback =
+      "The increasing workload had a noticeable effect on your performance. The later levels were significantly more difficult.";
+
+  }
+  else{
+
+    feedback =
+      "The amount of multitasking significantly affected your performance. This demonstrates how adding distractions can make a task much harder.";
+
+  }
+
+
+  document.getElementById("feedbackText")
+    .textContent =
+    feedback;
+
+
+  document.getElementById("end")
+    .classList.remove("hidden");
+
+}
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+function key(e){
+
+  keys[e.key] = true;
+
+
+  if([
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    " "
+  ].includes(e.key)){
+
+    e.preventDefault();
+
+  }
+
+}
+
+
+function keyup(e){
+
+  keys[e.key] = false;
+
+}
+
+
+addEventListener(
+  "keydown",
+  key
+);
+
+addEventListener(
+  "keyup",
+  keyup
+);
+
+
+/* =========================
+   TOUCH CONTROLS
+========================= */
+
+document
+  .querySelectorAll(".touch button")
+  .forEach(button=>{
+
+    let k =
+      button.dataset.k;
+
+
+    button.onpointerdown =
+      ()=>{
+        keys[k] = true;
+      };
+
+
+    button.onpointerup =
+      ()=>{
+        keys[k] = false;
+      };
+
+
+    button.onpointerleave =
+      ()=>{
+        keys[k] = false;
+      };
+
+  });
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+document
+  .getElementById("startBtn")
+  .onclick = reset;
+
+
+document
+  .getElementById("againBtn")
+  .onclick = reset;
+
+
+/* =========================
+   INITIAL DRAW
+========================= */
+
+draw();
+
+</script>
+
+</body>
+</html>
